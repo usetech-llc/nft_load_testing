@@ -2,7 +2,7 @@ const { ApiPromise, WsProvider, Keyring } = require('@polkadot/api');
 const { default: BigNumber } = require('bignumber.js');
 const fs = require('fs');
 
-const TRANSACTIONS_PER_BLOCK = 10000;
+const TRANSACTIONS_PER_BLOCK = 1000;
 
 function sendTransactionAsync(sender, transaction) {
   return new Promise(async function(resolve, reject) {
@@ -12,47 +12,31 @@ function sendTransactionAsync(sender, transaction) {
       
         if (status == 'Ready') {
           // nothing to do
-          // console.log(`Current tx status is Ready`);
+        }
+        else if (status == 'Invalid') {
+          resolve(false);
+          unsub();
         }
         else if (JSON.parse(status).Broadcast) {
           // nothing to do
-          // console.log(`Current tx status is Broadcast`);
         }
         else if (status.isInBlock) {
-          // console.log(`Transaction included at blockHash ${status.asInBlock}`);
-          resolve();
+          resolve(true);
           unsub();
-
         } else if (status.isFinalized) {
-          // console.log(`Transaction finalized at blockHash ${status.asFinalized}`);
-
-          // // Loop through Vec<EventRecord> to display all events
-          // let success = false;
-          // events.forEach(({ phase, event: { data, method, section } }) => {
-          //   // console.log(`    ${phase}: ${section}.${method}:: ${data}`);
-          //   if (method == 'ExtrinsicSuccess') {
-          //     success = true;
-          //   }
-          // });
-
-          // if (success) resolve();
-          // else {
-          //   reject("Transaction failed");
-          // }
-          resolve();
+          resolve(true);
           unsub();
         }
         else
         {
-          console.log(`Something went wrong with transaction. Status: ${status}`);
-
-          reject("Transaction failed");
+          // console.log(`Something went wrong with transaction. Status: ${status}`);
+          resolve(false);
           unsub();
         }
       });
     } catch (e) {
-      console.log("Error: ", e);
-      reject(e);
+      // console.log("Error: ", e);
+      resolve(false);
     }
   });
 }
@@ -67,7 +51,12 @@ async function batchTransfer(api, batch) {
     // console.log(`${batch[i].sender.address} transferring ${batch[i].amount} to ${batch[i].address}`);
   }
 
-  await Promise.all(jobs);
+  const result = await Promise.all(jobs);
+  let success = 0;
+  for (let i=0; i<result.length; i++) {
+    success++;
+  }
+  return success;
 }
 
 async function main() {
@@ -125,7 +114,10 @@ async function main() {
       }
     }
 
-    await batchTransfer(api, batch);
+    const success = await batchTransfer(api, batch);
+    if (success != i) {
+      console.log(`WARNING: Only ${success} of ${i} txs were successful`);
+    }
 
     i *= 2;
     if (i > TRANSACTIONS_PER_BLOCK) i = TRANSACTIONS_PER_BLOCK;
