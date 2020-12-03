@@ -1,9 +1,10 @@
 const { ApiPromise, WsProvider, Keyring } = require('@polkadot/api');
+const { default: BigNumber } = require('bignumber.js');
 const fs = require('fs');
 
-const TRANSACTIONS_PER_BLOCK = 1000;
+const TRANSACTIONS_PER_BLOCK = 10000;
 
-function sendTransactionAsync(api, sender, transaction) {
+function sendTransactionAsync(sender, transaction) {
   return new Promise(async function(resolve, reject) {
     try {
       const unsub = await transaction
@@ -56,6 +57,19 @@ function sendTransactionAsync(api, sender, transaction) {
   });
 }
 
+async function batchTransfer(api, batch) {
+  let jobs = [];
+
+  for (let i=0; i<batch.length; i++) {
+    const tx = api.tx.balances.transfer(batch[i].address, batch[i].amount);
+    jobs.push(sendTransactionAsync(batch[i].sender, tx));
+
+    // console.log(`${batch[i].sender.address} transferring ${batch[i].amount} to ${batch[i].address}`);
+  }
+
+  await Promise.all(jobs);
+}
+
 async function main() {
   // Initialise the provider to connect to the node
   const wsProvider = new WsProvider('ws://127.0.0.1:9944');
@@ -87,14 +101,34 @@ async function main() {
 
   /////////////////////////////////////////////////////////////////////////
   // Transfer 1000 to each address
+  let amount = new BigNumber('1000000000000000000');
+  let batchAmount = amount.multipliedBy(TRANSACTIONS_PER_BLOCK);
+
+  // Alice -> Sender 1
   process.stdout.write(`Crediting senders ...            \r`);
-  for (let i=0; i<TRANSACTIONS_PER_BLOCK; i++) {
-    const bal = (await api.query.system.account(senders[i].address)).data.free;
-    // console.log(bal.toString());
-    if (bal < 1e17) {
-      const tx = api.tx.balances.transfer(senders[i].address, '1000000000000000000');
-      await sendTransactionAsync(api, alice, tx);
+  const tx = api.tx.balances.transfer(alice.address, batchAmount);
+  await sendTransactionAsync(alice, tx);
+
+  let i=1;
+  while (i<TRANSACTIONS_PER_BLOCK) {
+    batchAmount = batchAmount.dividedBy(2).integerValue();
+
+    // Senders share. Senders 0..i already have balance and share it with next i
+    let batch = [];
+    for (let j=0; j<i; j++) {
+      if (i+j < TRANSACTIONS_PER_BLOCK) {
+        batch.push({
+          sender: senders[j],
+          address: senders[i+j].address,
+          amount: batchAmount
+        });
+      }
     }
+
+    await batchTransfer(api, batch);
+
+    i *= 2;
+    if (i > TRANSACTIONS_PER_BLOCK) i = TRANSACTIONS_PER_BLOCK;
 
     process.stdout.write(`Crediting senders ... ${i} of ${TRANSACTIONS_PER_BLOCK}           \r`);
   }
@@ -106,14 +140,16 @@ async function main() {
   process.stdout.write(`Sending transactions ...            \r`);
   let count = 0;
   while (true) {
-    let jobs = [];
-
+    let batch = [];
     for (let i=0; i<TRANSACTIONS_PER_BLOCK; i++) {
-      const tx = api.tx.balances.transfer(alice.address, 1);
-      jobs.push(sendTransactionAsync(api, senders[i], tx));
+      batch.push({
+        sender: senders[i],
+        address: alice.address,
+        amount: 1
+      });
     }
 
-    await Promise.all(jobs);
+    await batchTransfer(api, batch);
     count += TRANSACTIONS_PER_BLOCK;
     process.stdout.write(`Sending transactions ... ${count}           \r`);
   }
