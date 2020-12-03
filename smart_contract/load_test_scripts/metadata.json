@@ -1,0 +1,127 @@
+{
+  "metadataVersion": "0.1.0",
+  "source": {
+    "hash": "0xb0e7abadd4de43c768a6d95ce8a6ceb7aed55957919edb402b43259d39f30849",
+    "language": "ink! 3.0.0-rc2",
+    "compiler": "rustc 1.48.0-nightly"
+  },
+  "contract": {
+    "name": "loadtester",
+    "version": "0.1.0",
+    "authors": [
+      "[your_name] <[your_email]>"
+    ]
+  },
+  "spec": {
+    "constructors": [
+      {
+        "args": [],
+        "docs": [],
+        "name": [
+          "new"
+        ],
+        "selector": "0xd183512b"
+      }
+    ],
+    "docs": [],
+    "events": [],
+    "messages": [
+      {
+        "args": [
+          {
+            "name": "count",
+            "type": {
+              "displayName": [
+                "u64"
+              ],
+              "type": 2
+            }
+          }
+        ],
+        "docs": [],
+        "mutates": true,
+        "name": [
+          "bloat"
+        ],
+        "payable": false,
+        "returnType": null,
+        "selector": "0x49891c2a"
+      },
+      {
+        "args": [],
+        "docs": [],
+        "mutates": false,
+        "name": [
+          "get"
+        ],
+        "payable": false,
+        "returnType": {
+          "displayName": [
+            "Vec"
+          ],
+          "type": 3
+        },
+        "selector": "0x1e5ca456"
+      }
+    ]
+  },
+  "storage": {
+    "struct": {
+      "fields": [
+        {
+          "layout": {
+            "struct": {
+              "fields": [
+                {
+                  "layout": {
+                    "cell": {
+                      "key": "0x0000000000000000000000000000000000000000000000000000000000000000",
+                      "ty": 1
+                    }
+                  },
+                  "name": "len"
+                },
+                {
+                  "layout": {
+                    "array": {
+                      "cellsPerElem": 1,
+                      "layout": {
+                        "cell": {
+                          "key": "0x0000000001000000000000000000000000000000000000000000000000000000",
+                          "ty": 2
+                        }
+                      },
+                      "len": 4294967295,
+                      "offset": "0x0100000000000000000000000000000000000000000000000000000000000000"
+                    }
+                  },
+                  "name": "elems"
+                }
+              ]
+            }
+          },
+          "name": "vector"
+        }
+      ]
+    }
+  },
+  "types": [
+    {
+      "def": {
+        "primitive": "u32"
+      }
+    },
+    {
+      "def": {
+        "primitive": "u64"
+      }
+    },
+    {
+      "def": {
+        "sequence": {
+          "type": 2
+        }
+      }
+    }
+  ]
+}
