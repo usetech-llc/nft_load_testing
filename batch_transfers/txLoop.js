@@ -62,12 +62,12 @@ async function batchTransfer(api, batch) {
 async function main() {
   // Initialise the provider to connect to the node
   const wsProvider = new WsProvider('ws://127.0.0.1:9944');
-  const rtt = JSON.parse(fs.readFileSync("runtime_types_dev.json"));
+  // const rtt = JSON.parse(fs.readFileSync("runtime_types_dev.json"));
 
   // Create the API and wait until ready
   const api = await ApiPromise.create({ 
     provider: wsProvider,
-    types: rtt
+    // types: rtt
   });
 
   const keyring = new Keyring({ type: 'sr25519' });
